@@ -55,12 +55,15 @@ public class TextureRemix {
         outputBoxes.add(0,null);
         inputcount = 1;
         outputcount = 1;
-
+        
         //Todo: remove this once I can do dynamic layouts
         addOutput();
         addOutput();
         addOutput();
         addOutput();
+        
+        javax.imageio.spi.IIORegistry registry = javax.imageio.spi.IIORegistry.getDefaultInstance();
+        registry.registerServiceProvider(new com.realityinteractive.imageio.tga.TGAImageReaderSpi());
 
         TextureRemixGui.main(args);
     }
