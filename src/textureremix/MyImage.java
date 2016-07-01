@@ -111,36 +111,58 @@ public class MyImage {
     
     //http://stackoverflow.com/questions/6524196/java-get-pixel-array-from-image
     void loadPixels() {
-        byte[] pixels = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
+        DataBuffer db = image.getRaster().getDataBuffer();
         pix = new pixel[getHeight()][getWidth()];
-        if (hasAlpha()) {
-            final int pixelLength = 4;
-            for (int pixel = 0, row = 0, col = 0; pixel < pixels.length; pixel += pixelLength) {
-                if (col == getWidth()) {
-                    col = 0;
-                    row++;
+        if( db instanceof DataBufferByte ) {
+            byte[] pixels = ((DataBufferByte) db).getData();
+            if (hasAlpha()) {
+                final int pixelLength = 4;
+                for (int pixel = 0, row = 0, col = 0; pixel < pixels.length; pixel += pixelLength) {
+                    if (col == getWidth()) {
+                        col = 0;
+                        row++;
+                    }
+                    int argb = 0;
+                    argb += (((int) pixels[pixel] & 0xff) << 24); // alpha
+                    argb += ((int) pixels[pixel + 1] & 0xff); // blue
+                    argb += (((int) pixels[pixel + 2] & 0xff) << 8); // green
+                    argb += (((int) pixels[pixel + 3] & 0xff) << 16); // red
+                    pix[row][col] = new pixel();
+                    pix[row][col].load(argb);
+                    col++;
                 }
-                int argb = 0;
-                argb += (((int) pixels[pixel] & 0xff) << 24); // alpha
-                argb += ((int) pixels[pixel + 1] & 0xff); // blue
-                argb += (((int) pixels[pixel + 2] & 0xff) << 8); // green
-                argb += (((int) pixels[pixel + 3] & 0xff) << 16); // red
-                pix[row][col] = new pixel();
-                pix[row][col].load(argb);
-                col++;
+            } else {
+                final int pixelLength = 3;
+                for (int pixel = 0, row = 0, col = 0; pixel < pixels.length; pixel += pixelLength) {
+                    if (col >= getWidth()) {
+                        col = 0;
+                        row++;
+                    }
+                    int argb = 0;
+                    argb += -16777216; // 255 alpha
+                    argb += ((int) pixels[pixel] & 0xff); // blue
+                    argb += (((int) pixels[pixel + 1] & 0xff) << 8); // green
+                    argb += (((int) pixels[pixel + 2] & 0xff) << 16); // red
+                    pix[row][col] = new pixel();
+                    pix[row][col].load(argb);
+                    col++;
+                }
             }
-        } else {
-            final int pixelLength = 3;
-            for (int pixel = 0, row = 0, col = 0; pixel < pixels.length; pixel += pixelLength) {
+        }
+        else {
+            // TGA databuffer is int, but in reversed order
+            int[] pixels = ((DataBufferInt) db).getData();
+            for (int pixel = 0, row = 0, col = 0; pixel < pixels.length; pixel++ ) {
                 if (col >= getWidth()) {
                     col = 0;
                     row++;
                 }
-                int argb = 0;
-                argb += -16777216; // 255 alpha
-                argb += ((int) pixels[pixel] & 0xff); // blue
-                argb += (((int) pixels[pixel + 1] & 0xff) << 8); // green
-                argb += (((int) pixels[pixel + 2] & 0xff) << 16); // red
+                int px = pixels[pixel];
+                int argb = (int)(px & 0xff000000);
+                argb += (int)(px & 0xff) << 16; // red
+                argb += (int)(px & 0xff00); // green
+                argb += (int)(px & 0xff0000) >> 16; // blue
+
                 pix[row][col] = new pixel();
                 pix[row][col].load(argb);
                 col++;
